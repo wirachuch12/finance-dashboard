@@ -342,12 +342,35 @@ select option{background:var(--card2)}
 .modal-actions{display:flex;gap:8px;margin-top:16px}
 .modal-actions .btn{flex:1}
 
+.dash-main-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px}
+
 @media(max-width:900px){
   .kpi-grid,.acct-grid{grid-template-columns:1fr 1fr}
   .g2,.g3,.g4{grid-template-columns:1fr}
   .span2{grid-column:span 1}
   .page{padding:16px}
   .topbar,.tabnav{padding-left:16px;padding-right:16px}
+  .dash-main-grid{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .topbar{padding:10px 12px;gap:8px}
+  .topbar-title{font-size:13px;white-space:nowrap}
+  .topbar-right{gap:6px;flex-shrink:0}
+  .hide-mobile{display:none}
+  .btn{padding:6px 10px;font-size:12px}
+  .month-select{font-size:11px;padding:5px 6px;max-width:120px}
+  .tab{padding:8px 10px;font-size:11px}
+  .tabnav{padding-left:8px;padding-right:8px;gap:0}
+  .page{padding:10px}
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi{padding:12px 14px}
+  .kpi-value{font-size:17px}
+  .kpi-label{font-size:10px}
+  .acct-grid{grid-template-columns:1fr 1fr}
+  th,td{padding:7px 8px;font-size:12px}
+  .card{padding:14px;border-radius:12px}
+  .toast{bottom:16px;right:12px;left:12px;text-align:center}
+  .form-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -358,8 +381,8 @@ select option{background:var(--card2)}
   <div class="topbar-title">MY<span>FINANCE</span> <span style="color:var(--muted);font-weight:400;font-size:12px">DASHBOARD</span></div>
   <div class="topbar-right">
     <select class="month-select" id="sel-month" onchange="onMonthChange()"></select>
-    <button class="btn btn-ghost" onclick="syncSheet()">↻ Sync Sheet</button>
-    <button class="btn btn-primary" onclick="showTab('entry')">+ บันทึก</button>
+    <button class="btn btn-ghost" onclick="syncSheet()">↻ <span class="hide-mobile">Sync Sheet</span></button>
+    <button class="btn btn-primary" onclick="showTab('entry')">+ <span class="hide-mobile">บันทึก</span></button>
   </div>
 </div>
 
@@ -417,7 +440,7 @@ select option{background:var(--card2)}
   </div>
 
   <!-- ROW: main table + right sidebar -->
-  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px">
+  <div class="dash-main-grid">
 
     <!-- MAIN TABLE -->
     <div class="card">
