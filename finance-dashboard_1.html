@@ -724,7 +724,7 @@ select option{background:var(--card2)}
             <th style="text-align:left">Description</th>
             <th>Account</th>
             <th>Amount</th>
-            <th>ยอดสะสม</th>
+            <th title="ยอดคงเหลือในบัญชีนั้นๆ หลัง transaction นี้">ยอดในบัญชี</th>
             <th style="text-align:left">Note</th>
             <th></th>
           </tr>
@@ -1557,23 +1557,27 @@ function renderHistory(){
     ${totalExp>0?`<span style="font-size:13px">รายจ่าย <b style="color:var(--expense)">${fmtPlain(totalExp)}</b></span>`:''}
     <span style="font-size:13px;font-weight:700;color:${net>=0?'var(--income)':'var(--expense)'}">ยอดสุทธิ ${net>=0?'+':''}${fmtPlain(net)}</span>`;
 
-  // ── Running balance (คำนวณจากทุก tx ของบัญชีที่ filter เรียงเก่าสุด→ใหม่สุด) ──
-  const txForBal=S.transactions
-    .filter(t=>!acctF||t.account===acctF)
-    .slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:(a.date||'')>(b.date||'')?1:0);
-  // ใส่ OB เป็นจุดเริ่มต้น
-  let obStart=0;
-  if(acctF){
-    const cycles=Object.keys(S.openingBal||{}).sort();
-    if(cycles.length) obStart=Number((S.openingBal[cycles[0]]||{})[acctF]||0);
-  }
-  const balMap=new Map();
-  let running=obStart;
-  txForBal.forEach(t=>{
-    if(t.type==='income') running+=Number(t.amount);
-    else if(t.type==='expense') running-=Number(t.amount);
-    balMap.set(t,running);
+  // ── Running balance แยกตามบัญชี (per-account) ──
+  // เริ่มต้นแต่ละบัญชีจาก OB รอบแรกที่บันทึกไว้
+  const cycles=Object.keys(S.openingBal||{}).sort();
+  const acctRunning={};
+  S.accounts.forEach(a=>{
+    let ob=0;
+    for(const ym of cycles){
+      const v=Number((S.openingBal[ym]||{})[a]||0);
+      if(v!==0){ob=v;break;}
+    }
+    acctRunning[a]=ob;
   });
+  // เรียง tx ทั้งหมดเก่า→ใหม่ แล้วสะสมยอดแต่ละบัญชี
+  const balMap=new Map();
+  S.transactions.slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:(a.date||'')>(b.date||'')?1:0)
+    .forEach(t=>{
+      if(!acctRunning[t.account]) acctRunning[t.account]=0;
+      if(t.type==='income') acctRunning[t.account]+=Number(t.amount);
+      else if(t.type==='expense') acctRunning[t.account]-=Number(t.amount);
+      balMap.set(t,acctRunning[t.account]);
+    });
 
   const tbody=document.getElementById('hist-tbody');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:24px">ไม่มีรายการ</td></tr>';return;}
