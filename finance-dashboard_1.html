@@ -1557,26 +1557,40 @@ function renderHistory(){
     ${totalExp>0?`<span style="font-size:13px">รายจ่าย <b style="color:var(--expense)">${fmtPlain(totalExp)}</b></span>`:''}
     <span style="font-size:13px;font-weight:700;color:${net>=0?'var(--income)':'var(--expense)'}">ยอดสุทธิ ${net>=0?'+':''}${fmtPlain(net)}</span>`;
 
-  // ── Running balance แยกตามบัญชี (per-account) ──
-  // เริ่มต้นแต่ละบัญชีจาก OB รอบแรกที่บันทึกไว้
-  const cycles=Object.keys(S.openingBal||{}).sort();
-  const acctRunning={};
+  // ── Running balance แยกตามบัญชี — เริ่มจาก OB ของรอบแรกสุดที่บันทึก ──
+  const obCycles=Object.keys(S.openingBal||{}).sort();
+  // หา anchor (ob + วันเริ่มรอบ) ของแต่ละบัญชี
+  const acctAnchor={};
   S.accounts.forEach(a=>{
-    let ob=0;
-    for(const ym of cycles){
+    for(const ym of obCycles){
       const v=Number((S.openingBal[ym]||{})[a]||0);
-      if(v!==0){ob=v;break;}
+      if(v!==0){
+        const cd=getCycleDates(ym);
+        acctAnchor[a]={ob:v,startDate:cd.start};
+        break;
+      }
     }
-    acctRunning[a]=ob;
   });
-  // เรียง tx ทั้งหมดเก่า→ใหม่ แล้วสะสมยอดแต่ละบัญชี
+  // สะสมยอดต่อบัญชี: undefined = ยังไม่เริ่ม (ก่อน anchor)
+  const acctBal={};
   const balMap=new Map();
-  S.transactions.slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:(a.date||'')>(b.date||'')?1:0)
+  S.transactions.slice()
+    .sort((a,b)=>(a.date||'')<(b.date||'')?-1:(a.date||'')>(b.date||'')?1:0)
     .forEach(t=>{
-      if(!acctRunning[t.account]) acctRunning[t.account]=0;
-      if(t.type==='income') acctRunning[t.account]+=Number(t.amount);
-      else if(t.type==='expense') acctRunning[t.account]-=Number(t.amount);
-      balMap.set(t,acctRunning[t.account]);
+      const a=t.account, anchor=acctAnchor[a];
+      if(acctBal[a]===undefined){
+        if(!anchor){
+          acctBal[a]=0; // ไม่มี OB: เริ่มจาก 0
+        } else if((t.date||'')>=anchor.startDate){
+          acctBal[a]=anchor.ob; // ถึงวันเริ่มรอบ: ใส่ OB
+        } else {
+          balMap.set(t,null); // ก่อน OB anchor → แสดง —
+          return;
+        }
+      }
+      if(t.type==='income') acctBal[a]+=Number(t.amount);
+      else if(t.type==='expense') acctBal[a]-=Number(t.amount);
+      balMap.set(t,acctBal[a]);
     });
 
   const tbody=document.getElementById('hist-tbody');
