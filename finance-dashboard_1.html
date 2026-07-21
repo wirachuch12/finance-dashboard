@@ -745,22 +745,39 @@ select option{background:var(--card2)}
   <div id="plan-add-form" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center">
     <div style="background:var(--card);border-radius:14px;padding:24px;width:min(420px,92vw);display:flex;flex-direction:column;gap:12px">
       <div style="font-weight:700;font-size:15px;margin-bottom:4px">เพิ่มรายการแผน</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label style="font-size:11px;color:var(--muted)">ประเภท</label>
-          <select id="pa-type" class="sel" style="width:100%">
-            <option value="expense">รายจ่าย</option>
-            <option value="income">รายรับ</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:11px;color:var(--muted)">บัญชี</label>
-          <select id="pa-acct" class="sel" style="width:100%"></select>
+      <div>
+        <label style="font-size:11px;color:var(--muted)">ประเภท</label>
+        <select id="pa-type" class="sel" style="width:100%" onchange="updatePlanFormFields()">
+          <option value="expense">รายจ่าย</option>
+          <option value="income">รายรับ</option>
+          <option value="transfer">โอน / จ่ายบัตร</option>
+        </select>
+      </div>
+      <!-- normal: single account + category -->
+      <div id="pa-normal-fields">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted)">บัญชี</label>
+            <select id="pa-acct" class="sel" style="width:100%"></select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted)">หมวดหมู่</label>
+            <select id="pa-cat" class="sel" style="width:100%"></select>
+          </div>
         </div>
       </div>
-      <div>
-        <label style="font-size:11px;color:var(--muted)">หมวดหมู่</label>
-        <select id="pa-cat" class="sel" style="width:100%"></select>
+      <!-- transfer: from + to -->
+      <div id="pa-transfer-fields" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted)">จาก (ตัดเงิน)</label>
+            <select id="pa-from" class="sel" style="width:100%"></select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted)">ไปยัง (เข้าเงิน / ชำระบัตร)</label>
+            <select id="pa-to" class="sel" style="width:100%"></select>
+          </div>
+        </div>
       </div>
       <div>
         <label style="font-size:11px;color:var(--muted)">รายละเอียด (ไม่บังคับ)</label>
@@ -1989,18 +2006,21 @@ function renderBudget(){
   const [y,m]=ym.split('-').map(Number);
   const monthLabel=new Date(y,m-1,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'});
 
-  // totals
+  // totals (exclude transfers — they're internal moves, net zero overall)
   const planInc=items.filter(i=>i.type==='income').reduce((s,i)=>s+Number(i.amount),0);
   const planExp=items.filter(i=>i.type==='expense').reduce((s,i)=>s+Number(i.amount),0);
+  const planXfer=items.filter(i=>i.type==='transfer').reduce((s,i)=>s+Number(i.amount),0);
   const planNet=planInc-planExp;
 
-  // per-account projected
+  // per-account projected (transfers count as exp from source, inc to dest)
   const accts=S.accounts;
   const isCC=new Set(S.creditCards||[]);
   const acctRows=accts.map(a=>{
     const ob=Number((S.openingBal?.[ym]||{})[a]||0);
-    const inc=items.filter(i=>i.type==='income'&&i.account===a).reduce((s,i)=>s+Number(i.amount),0);
-    const exp=items.filter(i=>i.type==='expense'&&i.account===a).reduce((s,i)=>s+Number(i.amount),0);
+    const inc=items.filter(i=>i.type==='income'&&i.account===a).reduce((s,i)=>s+Number(i.amount),0)
+             +items.filter(i=>i.type==='transfer'&&i.toAccount===a).reduce((s,i)=>s+Number(i.amount),0);
+    const exp=items.filter(i=>i.type==='expense'&&i.account===a).reduce((s,i)=>s+Number(i.amount),0)
+             +items.filter(i=>i.type==='transfer'&&i.fromAccount===a).reduce((s,i)=>s+Number(i.amount),0);
     const proj=ob+inc-exp;
     if(ob===0&&inc===0&&exp===0) return '';
     const lim=Number(S.creditLimits?.[a]||0);
@@ -2023,24 +2043,30 @@ function renderBudget(){
   // item rows
   const itemRows=items.length===0
     ? `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">ยังไม่มีรายการ — กด "เพิ่มรายการ" หรือ "ดึง Recurring"</td></tr>`
-    : items.map((item,idx)=>`
-    <tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:8px 10px">
-        <span style="font-size:11px;padding:2px 7px;border-radius:4px;background:${item.type==='income'?'rgba(50,205,50,.12)':'rgba(255,82,82,.12)'};color:${item.type==='income'?'var(--green)':'var(--red)'}">
-          ${item.type==='income'?'รายรับ':'รายจ่าย'}
-        </span>
-        ${item.auto?'<span style="font-size:10px;background:rgba(108,142,255,.12);color:var(--accent);border-radius:3px;padding:1px 5px;margin-left:4px">auto</span>':''}
-      </td>
-      <td style="padding:8px 10px;font-size:13px">${item.account}</td>
-      <td style="padding:8px 10px;font-size:13px;color:var(--muted)">${item.category}</td>
-      <td style="padding:8px 10px;font-size:12px;color:var(--soft)">${item.detail||'—'}</td>
-      <td style="padding:8px 10px;font-family:var(--mono);font-size:13px;text-align:right;color:${item.type==='income'?'var(--green)':'var(--red)'}">
-        ${item.type==='income'?'+':'−'}฿${fmt(item.amount)}
-      </td>
-      <td style="padding:8px 6px;text-align:center">
-        <button onclick="deletePlanItem('${ym}',${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 4px">🗑️</button>
-      </td>
-    </tr>`).join('');
+    : items.map((item,idx)=>{
+      const isXfer=item.type==='transfer';
+      const typeBadge=isXfer
+        ? `<span style="font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(108,142,255,.12);color:var(--accent)">โอน</span>`
+        : `<span style="font-size:11px;padding:2px 7px;border-radius:4px;background:${item.type==='income'?'rgba(50,205,50,.12)':'rgba(255,82,82,.12)'};color:${item.type==='income'?'var(--green)':'var(--red)'}">
+            ${item.type==='income'?'รายรับ':'รายจ่าย'}
+           </span>`;
+      const acctCell=isXfer
+        ? `<span style="color:var(--red)">${item.fromAccount}</span> → <span style="color:var(--green)">${item.toAccount}</span>`
+        : item.account;
+      const amtCell=isXfer
+        ? `<span style="color:var(--muted)">฿${fmt(item.amount)}</span>`
+        : `<span style="color:${item.type==='income'?'var(--green)':'var(--red)'}">${item.type==='income'?'+':'−'}฿${fmt(item.amount)}</span>`;
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 10px">${typeBadge}${item.auto?'<span style="font-size:10px;background:rgba(108,142,255,.12);color:var(--accent);border-radius:3px;padding:1px 5px;margin-left:4px">auto</span>':''}</td>
+        <td style="padding:8px 10px;font-size:13px">${acctCell}</td>
+        <td style="padding:8px 10px;font-size:13px;color:var(--muted)">${item.category}</td>
+        <td style="padding:8px 10px;font-size:12px;color:var(--soft)">${item.detail||'—'}</td>
+        <td style="padding:8px 10px;font-family:var(--mono);font-size:13px;text-align:right">${amtCell}</td>
+        <td style="padding:8px 6px;text-align:center">
+          <button onclick="deletePlanItem('${ym}',${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 4px">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
 
   document.getElementById('plan-content').innerHTML=`
     <!-- cycle nav -->
@@ -2057,7 +2083,7 @@ function renderBudget(){
     </div>
 
     <!-- KPI summary -->
-    <div class="kpi-grid mb" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi-grid mb" style="grid-template-columns:repeat(${planXfer>0?4:3},1fr)">
       <div class="kpi income-kpi">
         <div class="kpi-label">รายรับที่วางแผน</div>
         <div class="kpi-value income">฿${fmt(planInc)}</div>
@@ -2068,6 +2094,11 @@ function renderBudget(){
         <div class="kpi-value expense">฿${fmt(planExp)}</div>
         <div class="kpi-sub">${items.filter(i=>i.type==='expense').length} รายการ</div>
       </div>
+      ${planXfer>0?`<div class="kpi" style="border-color:rgba(108,142,255,.25)">
+        <div class="kpi-label">โอน / ชำระบัตร</div>
+        <div class="kpi-value" style="color:var(--accent)">฿${fmt(planXfer)}</div>
+        <div class="kpi-sub">${items.filter(i=>i.type==='transfer').length} รายการ</div>
+      </div>`:''}
       <div class="kpi balance-kpi">
         <div class="kpi-label">ประมาณการณ์สุทธิ</div>
         <div class="kpi-value" style="color:${planNet>=0?'var(--green)':'var(--red)'}">฿${fmt(planNet)}</div>
@@ -2115,32 +2146,49 @@ function openPlanForm(ym){
   const form=document.getElementById('plan-add-form');
   form.style.display='flex';
   form.dataset.ym=ym;
-  // populate dropdowns
-  document.getElementById('pa-acct').innerHTML=S.accounts.map(a=>`<option>${a}</option>`).join('');
-  updatePlanCats();
-  document.getElementById('pa-type').onchange=updatePlanCats;
+  const acctOpts=S.accounts.map(a=>`<option>${a}</option>`).join('');
+  document.getElementById('pa-acct').innerHTML=acctOpts;
+  document.getElementById('pa-from').innerHTML=acctOpts;
+  document.getElementById('pa-to').innerHTML=acctOpts;
+  if(S.accounts.length>1) document.getElementById('pa-to').selectedIndex=1;
+  document.getElementById('pa-type').value='expense';
+  updatePlanFormFields();
   document.getElementById('pa-detail').value='';
   document.getElementById('pa-amt').value='';
 }
 function closePlanForm(){ document.getElementById('plan-add-form').style.display='none'; }
-function updatePlanCats(){
+function updatePlanFormFields(){
   const type=document.getElementById('pa-type').value;
-  const cats=type==='expense'?(S.expCats||[]):(S.incCats||[]);
-  document.getElementById('pa-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+  const isXfer=type==='transfer';
+  document.getElementById('pa-normal-fields').style.display=isXfer?'none':'block';
+  document.getElementById('pa-transfer-fields').style.display=isXfer?'block':'none';
+  if(!isXfer){
+    const cats=type==='expense'?(S.expCats||[]):(S.incCats||[]);
+    document.getElementById('pa-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+  }
 }
 function savePlanItem(){
   const ym=document.getElementById('plan-add-form').dataset.ym;
   if(!S.budgetPlans[ym]) S.budgetPlans[ym]=[];
   const amt=parseFloat(document.getElementById('pa-amt').value)||0;
   if(amt<=0){ alert('กรุณากรอกจำนวนเงิน'); return; }
-  S.budgetPlans[ym].push({
-    type:document.getElementById('pa-type').value,
-    account:document.getElementById('pa-acct').value,
-    category:document.getElementById('pa-cat').value,
-    detail:document.getElementById('pa-detail').value.trim(),
-    amount:amt,
-    auto:false
-  });
+  const type=document.getElementById('pa-type').value;
+  if(type==='transfer'){
+    const from=document.getElementById('pa-from').value;
+    const to=document.getElementById('pa-to').value;
+    if(from===to){ alert('บัญชีต้นทางและปลายทางต้องไม่เหมือนกัน'); return; }
+    const detail=document.getElementById('pa-detail').value.trim();
+    S.budgetPlans[ym].push({type:'transfer',fromAccount:from,toAccount:to,category:'โอนระหว่างธนาคาร',detail,amount:amt,auto:false});
+  } else {
+    S.budgetPlans[ym].push({
+      type,
+      account:document.getElementById('pa-acct').value,
+      category:document.getElementById('pa-cat').value,
+      detail:document.getElementById('pa-detail').value.trim(),
+      amount:amt,
+      auto:false
+    });
+  }
   saveS();
   closePlanForm();
   renderBudget();
