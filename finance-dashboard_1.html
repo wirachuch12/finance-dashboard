@@ -1461,8 +1461,9 @@ async function submitTransfer(){
   if(!date||isNaN(amount)||amount<0){toast('กรุณากรอกข้อมูลให้ครบ','err');return;}
   if(from===to){toast('บัญชีต้นทางและปลายทางต้องไม่เหมือนกัน','err');return;}
   const detail=`${from} → ${to}`;
-  const expEntry={type:'expense',date,account:from,category:'โอนระหว่างธนาคาร',txType:'Transfer',detail,amount,note};
-  const incEntry={type:'income', date,account:to,  category:'โอนระหว่างธนาคาร',txType:'Transfer',detail,amount,note};
+  const _seq=Date.now();
+  const expEntry={type:'expense',date,account:from,category:'โอนระหว่างธนาคาร',txType:'Transfer',detail,amount,note,_seq};
+  const incEntry={type:'income', date,account:to,  category:'โอนระหว่างธนาคาร',txType:'Transfer',detail,amount,note,_seq};
   S.transactions.unshift(incEntry);
   S.transactions.unshift(expEntry);
   saveS();
@@ -1492,7 +1493,7 @@ async function submitEntry(){
 
   if(!date||!detail||isNaN(amount)||amount<=0){toast('กรุณากรอกข้อมูลให้ครบ','err');return;}
 
-  const entry={type:txMode,date,account,category,txType,detail,amount,note};
+  const entry={type:txMode,date,account,category,txType,detail,amount,note,_seq:Date.now()};
   S.transactions.unshift(entry);
   saveS();
 
@@ -1575,7 +1576,7 @@ function renderHistory(){
   const acctBal={};
   const balMap=new Map();
   S.transactions.slice()
-    .sort((a,b)=>(a.date||'')<(b.date||'')?-1:(a.date||'')>(b.date||'')?1:0)
+    .sort((a,b)=>{const dc=(a.date||'').localeCompare(b.date||'');return dc!==0?dc:(a._seq??0)-(b._seq??0);})
     .forEach(t=>{
       const a=t.account, anchor=acctAnchor[a];
       if(acctBal[a]===undefined){
@@ -2038,13 +2039,14 @@ async function syncSheet(){
       // expense / income rows
       const acctSet=new Set(S.accounts);
       const parseDate=s=>(!s?'':s.length>10?isoToLocal(s):s.slice(0,10));
+      let sheetSeq=0;
       const both=[...(data.expenses||[]).map(r=>({type:'expense',...r})),
                   ...(data.incomes||[]).map(r=>({type:'income',...r}))];
       both.forEach(r=>{
         const date=parseDate(r.Date);
         const amt=Number(r.Amount);
         if(!merged.find(t=>(t.date||'').slice(0,10)===date&&t.detail===r.Detail&&t.amount==amt&&t.account===r.Account))
-          merged.push({type:r.type,date,category:r.Category,txType:r.Type,detail:r.Detail,account:r.Account,amount:amt,note:r.Note||''});
+          merged.push({type:r.type,date,category:r.Category,txType:r.Type,detail:r.Detail,account:r.Account,amount:amt,note:r.Note||'',_seq:sheetSeq++});
       });
       // transfer rows (sheet "โอนเงิน")
       (data.transfers||[]).forEach(r=>{
@@ -2053,12 +2055,17 @@ async function syncSheet(){
         const from=r['From account'], to=r['To account'];
         const cat=r.Category||'โอนระหว่างธนาคาร';
         const detail=`${from} → ${to}`;
+        const seq=sheetSeq++;
         if(!merged.find(t=>(t.date||'').slice(0,10)===date&&t.account===from&&t.txType==='Transfer'&&t.type==='expense'&&t.amount==amt))
-          merged.push({type:'expense',date,category:cat,txType:'Transfer',detail,account:from,amount:amt,note:''});
+          merged.push({type:'expense',date,category:cat,txType:'Transfer',detail,account:from,amount:amt,note:'',_seq:seq});
         if(!merged.find(t=>(t.date||'').slice(0,10)===date&&t.account===to&&t.txType==='Transfer'&&t.type==='income'&&t.amount==amt))
-          merged.push({type:'income',date,category:cat,txType:'Transfer',detail,account:to,amount:amt,note:''});
+          merged.push({type:'income',date,category:cat,txType:'Transfer',detail,account:to,amount:amt,note:'',_seq:seq});
       });
-      S.transactions=merged.sort((a,b)=>b.date.localeCompare(a.date));
+      S.transactions=merged.sort((a,b)=>{
+        const dc=b.date.localeCompare(a.date);
+        if(dc!==0) return dc;
+        return (b._seq??Infinity)-(a._seq??Infinity); // same date: higher _seq (later row) first
+      });
       saveS(); renderDashboard(); toast('Sync สำเร็จ ✓');
     }else toast('Sync ล้มเหลว: '+data.error,'err');
   }catch(e){ toast('เชื่อมต่อไม่ได้','err'); }
