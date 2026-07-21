@@ -1033,6 +1033,19 @@ function getCycleDates(ym) {
 
 function toISO(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
 
+function cycleForDate(date){
+  if(!date) return null;
+  const [y,m]=date.split('-').map(Number);
+  for(let off=-1;off<=2;off++){
+    let cm=m+off, cy=y;
+    if(cm>12){cm-=12;cy++;} if(cm<1){cm+=12;cy--;}
+    const ym=`${cy}-${String(cm).padStart(2,'0')}`;
+    const cd=getCycleDates(ym);
+    if(date>=cd.start&&date<=cd.end) return ym;
+  }
+  return null;
+}
+
 function fmtDateTH(iso){
   const d = new Date(iso+'T00:00:00');
   return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
@@ -1558,41 +1571,30 @@ function renderHistory(){
     ${totalExp>0?`<span style="font-size:13px">รายจ่าย <b style="color:var(--expense)">${fmtPlain(totalExp)}</b></span>`:''}
     <span style="font-size:13px;font-weight:700;color:${net>=0?'var(--income)':'var(--expense)'}">ยอดสุทธิ ${net>=0?'+':''}${fmtPlain(net)}</span>`;
 
-  // ── Running balance แยกตามบัญชี — เริ่มจาก OB ของรอบแรกสุดที่บันทึก ──
-  const obCycles=Object.keys(S.openingBal||{}).sort();
-  // หา anchor (ob + วันเริ่มรอบ) ของแต่ละบัญชี
-  const acctAnchor={};
-  S.accounts.forEach(a=>{
-    for(const ym of obCycles){
-      const v=Number((S.openingBal[ym]||{})[a]||0);
-      if(v!==0){
-        const cd=getCycleDates(ym);
-        acctAnchor[a]={ob:v,startDate:cd.start};
-        break;
-      }
-    }
-  });
-  // สะสมยอดต่อบัญชี: undefined = ยังไม่เริ่ม (ก่อน anchor)
-  const acctBal={};
-  const balMap=new Map();
+  // ── Running balance: OB ของรอบนั้น + tx ในรอบนั้น (ตรงกับ Remaining Balance บน dashboard) ──
+  // จัดกลุ่ม tx ตามบัญชี+รอบ เรียงเก่า→ใหม่
+  const cycleAcctTx={};
   S.transactions.slice()
     .sort((a,b)=>{const dc=(a.date||'').localeCompare(b.date||'');return dc!==0?dc:(a._seq??0)-(b._seq??0);})
     .forEach(t=>{
-      const a=t.account, anchor=acctAnchor[a];
-      if(acctBal[a]===undefined){
-        if(!anchor){
-          acctBal[a]=0; // ไม่มี OB: เริ่มจาก 0
-        } else if((t.date||'')>=anchor.startDate){
-          acctBal[a]=anchor.ob; // ถึงวันเริ่มรอบ: ใส่ OB
-        } else {
-          balMap.set(t,null); // ก่อน OB anchor → แสดง —
-          return;
-        }
-      }
-      if(t.type==='income') acctBal[a]+=Number(t.amount);
-      else if(t.type==='expense') acctBal[a]-=Number(t.amount);
-      balMap.set(t,acctBal[a]);
+      const ym=cycleForDate(t.date)||'';
+      const key=`${ym}|||${t.account}`;
+      if(!cycleAcctTx[key]) cycleAcctTx[key]=[];
+      cycleAcctTx[key].push(t);
     });
+  // คำนวณยอดสะสมภายในแต่ละรอบ เริ่มจาก OB ของรอบนั้น (0 ถ้าไม่ได้ตั้ง)
+  const balMap=new Map();
+  Object.entries(cycleAcctTx).forEach(([key,txs])=>{
+    const sep=key.indexOf('|||');
+    const ym=key.slice(0,sep), acct=key.slice(sep+3);
+    const ob=Number((S.openingBal?.[ym]||{})[acct]||0);
+    let running=ob;
+    txs.forEach(t=>{
+      if(t.type==='income') running+=Number(t.amount);
+      else if(t.type==='expense') running-=Number(t.amount);
+      balMap.set(t,running);
+    });
+  });
 
   const tbody=document.getElementById('hist-tbody');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:24px">ไม่มีรายการ</td></tr>';return;}
