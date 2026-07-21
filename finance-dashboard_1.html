@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Finance Dashboard</title>
+<title>Timmy Finance Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
@@ -382,16 +382,16 @@ select option{background:var(--card2)}
   <div class="topbar-right">
     <select class="month-select" id="sel-month" onchange="onMonthChange()"></select>
     <button class="btn btn-ghost" onclick="syncSheet()">↻ <span class="hide-mobile">Sync Sheet</span></button>
-    <button class="btn btn-primary" onclick="showTab('entry')">+ <span class="hide-mobile">บันทึก</span></button>
+    <button class="btn btn-primary" onclick="showTab('entry')">+ <span class="hide-mobile">Record Transaction</span></button>
   </div>
 </div>
 
 <!-- TAB NAV -->
 <div class="tabnav">
   <div class="tab active" onclick="showTab('dashboard')">Dashboard</div>
-  <div class="tab" onclick="showTab('entry')">บันทึกรายการ</div>
-  <div class="tab" onclick="showTab('history')">ประวัติ</div>
-  <div class="tab" onclick="showTab('settings')">ตั้งค่า</div>
+  <div class="tab" onclick="showTab('entry')">Record Transaction</div>
+  <div class="tab" onclick="showTab('history')">History</div>
+  <div class="tab" onclick="showTab('settings')">Settings</div>
 </div>
 
 <!-- ══════════════════ DASHBOARD ══════════════════ -->
@@ -404,7 +404,7 @@ select option{background:var(--card2)}
   <!-- CYCLE BAR -->
   <div class="cycle-bar">
     <div>
-      <div class="cycle-label">รอบเงินเดือน</div>
+      <div class="cycle-label">Monthly Cycle</div>
       <div class="cycle-dates" id="cycle-dates">—</div>
     </div>
     <div style="flex:1;min-width:160px">
@@ -412,28 +412,37 @@ select option{background:var(--card2)}
       <div class="cycle-progress-label" id="cycle-prog-label"></div>
     </div>
     <div class="cycle-next" id="cycle-next"></div>
-    <button class="cycle-override-btn" onclick="openOverride()">✎ แก้ไขวันตัดรอบ</button>
+    <button class="cycle-override-btn" onclick="openOverride()">Edit Cycle Dates</button>
   </div>
 
   <!-- KPI ROW -->
   <div class="kpi-grid mb">
     <div class="kpi income-kpi">
-      <div class="kpi-label">รายรับเดือนนี้</div>
+      <div class="kpi-label">Income this month</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        รายรับเดือนนี้
+      </p>
       <div class="kpi-value income" id="kpi-income">฿0</div>
       <div class="kpi-sub" id="kpi-income-sub">—</div>
     </div>
     <div class="kpi expense-kpi">
-      <div class="kpi-label">รายจ่ายเดือนนี้</div>
+      <div class="kpi-label">Expense this month</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        รายจ่ายเดือนนี้
+      </p>
       <div class="kpi-value expense" id="kpi-expense">฿0</div>
       <div class="kpi-sub" id="kpi-expense-sub">—</div>
     </div>
     <div class="kpi balance-kpi">
-      <div class="kpi-label">คงเหลือเดือนนี้</div>
+      <div class="kpi-label">Balance this month</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        ยอดเงินคงเหลือในบัญชี
+      </p>
       <div class="kpi-value" id="kpi-balance">฿0</div>
-      <div class="kpi-sub">รายรับ − รายจ่าย</div>
+      <div class="kpi-sub">Income − Expense</div>
     </div>
     <div class="kpi renew-kpi">
-      <div class="kpi-label">Subscription / เดือน</div>
+      <div class="kpi-label">Subscription/ month</div>
       <div class="kpi-value renew" id="kpi-renew">฿0</div>
       <div class="kpi-sub" id="kpi-renew-sub">—</div>
     </div>
@@ -444,7 +453,10 @@ select option{background:var(--card2)}
 
     <!-- MAIN TABLE -->
     <div class="card">
-      <div class="card-title">รายจ่ายแยกหมวด × บัญชี</div>
+      <div class="card-title">Expense by Category × Account</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        รายจ่ายแยกหมวด × บัญชี (เดือนนี้)
+      </p>
       <div class="tbl-wrap">
         <table id="main-table">
           <thead><tr id="main-thead"></tr></thead>
@@ -458,7 +470,10 @@ select option{background:var(--card2)}
 
       <!-- INCOME SUMMARY -->
       <div class="card">
-        <div class="card-title">รายรับ</div>
+        <div class="card-title">Income</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          รายรับแยกหมวด (เดือนนี้)
+        </p>
         <div style="margin-bottom:10px">
           <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Total</div>
           <div class="num num-pos" style="font-size:20px;font-weight:700" id="side-income-total">฿0</div>
@@ -468,9 +483,12 @@ select option{background:var(--card2)}
 
       <!-- EXPENSE SUMMARY -->
       <div class="card">
-        <div class="card-title">รายจ่าย</div>
+        <div class="card-title">Expense</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          รายจ่ายแยกหมวด (เดือนนี้)
+        </p>
         <div style="margin-bottom:10px">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">รวม</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Total</div>
           <div class="num num-neg" style="font-size:20px;font-weight:700" id="side-expense-total">฿0</div>
         </div>
         <div id="side-expense-breakdown"></div>
@@ -478,13 +496,19 @@ select option{background:var(--card2)}
 
       <!-- INSTALLMENTS -->
       <div class="card" id="install-card" style="display:none">
-        <div class="card-title">📅 รายการผ่อน</div>
+        <div class="card-title">Installments</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          รายการผ่อนชำระ
+        </p>
         <div id="install-list"></div>
       </div>
 
       <!-- CC STATEMENTS -->
       <div class="card" id="cc-statement-card" style="display:none">
-        <div class="card-title">ใบแจ้งหนี้บัตรเครดิต</div>
+        <div class="card-title">Credit Card Statements</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        ใบแจ้งหนี้บัตรเครดิต
+        </p>
         <div id="cc-statement-list"></div>
       </div>
 
@@ -503,18 +527,28 @@ select option{background:var(--card2)}
 
   <!-- ACCOUNT BALANCES -->
   <div class="card mb">
-    <div class="card-title">ยอดเงินคงเหลือในบัญชี (Remaining Balance)</div>
+    <div class="card-title">Remaining Balance</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        ยอดเงินคงเหลือในบัญชี
+    </p>
     <div class="acct-grid" id="acct-balance-grid"></div>
   </div>
 
   <!-- CHART ROW -->
   <div class="g2">
     <div class="card">
-      <div class="card-title">รายจ่ายแยกหมวด (เดือนนี้)</div>
+      <div class="card-title">Expense by Category - This Month</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        รายจ่ายแยกหมวด (เดือนนี้)
+      </p>
       <canvas id="chart-cat" height="200"></canvas>
     </div>
     <div class="card">
-      <div class="card-title">รายรับ vs รายจ่าย (6 เดือน)</div>
+      <div class="card-title">Income vs Expense (6 Months)</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        รายรับ vs รายจ่าย (6 เดือน)
+      </p>
+
       <canvas id="chart-monthly" height="200"></canvas>
     </div>
   </div>
@@ -526,19 +560,19 @@ select option{background:var(--card2)}
 
     <!-- Quick-add templates -->
     <div class="card span2" id="quick-add-card" style="display:none">
-      <div class="card-title" style="margin-bottom:10px">⚡ รายการประจำ</div>
+      <div class="card-title" style="margin-bottom:10px">Quick Add</div>
       <div id="quick-add-list"></div>
     </div>
 
     <div class="card span2">
-      <div class="card-title">บันทึกรายการใหม่</div>
+      <div class="card-title">Add New Entry</div>
 
       <div class="form-group" style="margin-bottom:16px">
-        <label>ประเภท</label>
+        <label>Type</label>
         <div class="type-toggle">
-          <button id="btn-exp" class="on-expense" onclick="setMode('expense')">🔴 รายจ่าย</button>
-          <button id="btn-inc" onclick="setMode('income')">🟢 รายรับ</button>
-          <button id="btn-xfer" onclick="setMode('transfer')" style="background:rgba(108,142,255,.12);color:var(--accent);border:1px solid rgba(108,142,255,.3);border-radius:8px;padding:8px 18px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">🔁 โอนเงิน</button>
+          <button id="btn-exp" class="on-expense" onclick="setMode('expense')">🔴 Expense</button>
+          <button id="btn-inc" onclick="setMode('income')">🟢 Income</button>
+          <button id="btn-xfer" onclick="setMode('transfer')" style="background:rgba(108,142,255,.12);color:var(--accent);border:1px solid rgba(108,142,255,.3);border-radius:8px;padding:8px 18px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">🔁 Transfer</button>
         </div>
       </div>
 
@@ -546,15 +580,15 @@ select option{background:var(--card2)}
       <div id="form-normal">
         <div class="form-grid">
           <div class="form-group">
-            <label>วันที่</label>
+            <label>Date</label>
             <input type="date" id="f-date">
           </div>
           <div class="form-group">
-            <label>บัญชี</label>
+            <label>Account</label>
             <select id="f-account"></select>
           </div>
           <div class="form-group">
-            <label>หมวดหมู่</label>
+            <label>Category</label>
             <select id="f-category"></select>
           </div>
           <div class="form-group">
@@ -565,46 +599,46 @@ select option{background:var(--card2)}
             </select>
           </div>
           <div class="form-group">
-            <label>รายละเอียด</label>
-            <input type="text" id="f-detail" placeholder="เช่น ก๋วยจั๊บ, Netflix">
+            <label>Details</label>
+            <input type="text" id="f-detail" placeholder="e.g., Kwai Jai, Netflix">
           </div>
           <div class="form-group">
-            <label>จำนวนเงิน (บาท)</label>
+            <label>Amount (THB)</label>
             <input type="number" id="f-amount" placeholder="0.00" min="0" step="0.01">
           </div>
           <div class="form-group full" id="grp-note">
-            <label>Note (เพิ่มเติม)</label>
-            <input type="text" id="f-note" placeholder="หมายเหตุ">
+            <label>Note (Additional)</label>
+            <input type="text" id="f-note" placeholder="Note">
           </div>
         </div>
-        <button class="submit-btn" id="submit-btn" onclick="submitEntry()">บันทึกรายการ</button>
+        <button class="submit-btn" id="submit-btn" onclick="submitEntry()">Submit</button>
       </div>
 
       <!-- Transfer form -->
       <div id="form-transfer" style="display:none">
         <div class="form-grid">
           <div class="form-group">
-            <label>วันที่</label>
+            <label>Date</label>
             <input type="date" id="xf-date">
           </div>
           <div class="form-group">
-            <label>จำนวนเงิน (บาท)</label>
+            <label>Amount (THB)</label>
             <input type="number" id="xf-amount" placeholder="0.00" min="0" step="0.01">
           </div>
           <div class="form-group">
-            <label>จากบัญชี</label>
+            <label>From Account</label>
             <select id="xf-from"></select>
           </div>
           <div class="form-group">
-            <label>ไปบัญชี</label>
+            <label>To Account</label>
             <select id="xf-to"></select>
           </div>
           <div class="form-group full">
-            <label>Note (เพิ่มเติม)</label>
-            <input type="text" id="xf-note" placeholder="หมายเหตุ">
+            <label>Note (Additional)</label>
+            <input type="text" id="xf-note" placeholder="Note">
           </div>
         </div>
-        <button class="submit-btn" id="xfer-btn" onclick="submitTransfer()">โอนเงิน</button>
+        <button class="submit-btn" id="xfer-btn" onclick="submitTransfer()">Transfer</button>
       </div>
     </div>
   </div>
@@ -614,18 +648,18 @@ select option{background:var(--card2)}
 <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center">
   <div style="background:var(--card);border-radius:14px;padding:24px;width:min(480px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <span style="font-size:15px;font-weight:700">แก้ไขรายการ</span>
+      <span style="font-size:15px;font-weight:700">Edit Transaction</span>
       <button onclick="closeEditModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer">✕</button>
     </div>
-    <div class="form-group mb"><label>วันที่</label><input type="date" id="em-date"></div>
-    <div class="form-group mb"><label>ประเภท</label>
+    <div class="form-group mb"><label>Date</label><input type="date" id="em-date"></div>
+    <div class="form-group mb"><label>Type</label>
       <select id="em-type" onchange="updateEmCats()">
-        <option value="expense">รายจ่าย</option>
-        <option value="income">รายรับ</option>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
       </select>
     </div>
-    <div class="form-group mb"><label>หมวด</label><select id="em-cat"></select></div>
-    <div class="form-group mb"><label>ประเภทรายการ</label>
+    <div class="form-group mb"><label>Category</label><select id="em-cat"></select></div>
+    <div class="form-group mb"><label>Transaction Type</label>
       <select id="em-txtype">
         <option value="Regular">Regular</option>
         <option value="Transfer">Transfer</option>
@@ -633,13 +667,13 @@ select option{background:var(--card2)}
         <option value="Withholding Tax">Withholding Tax</option>
       </select>
     </div>
-    <div class="form-group mb"><label>รายละเอียด</label><input type="text" id="em-detail"></div>
-    <div class="form-group mb"><label>บัญชี</label><select id="em-acct"></select></div>
-    <div class="form-group mb"><label>จำนวน</label><input type="number" id="em-amount" min="0" step="0.01"></div>
+    <div class="form-group mb"><label>Details</label><input type="text" id="em-detail"></div>
+    <div class="form-group mb"><label>Account</label><select id="em-acct"></select></div>
+    <div class="form-group mb"><label>Amount</label><input type="number" id="em-amount" min="0" step="0.01"></div>
     <div class="form-group mb"><label>Note</label><input type="text" id="em-note"></div>
     <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="btn btn-primary" style="flex:1" onclick="saveTxEdit()">บันทึก</button>
-      <button class="btn btn-ghost" onclick="closeEditModal()">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveTxEdit()">Save</button>
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -649,32 +683,32 @@ select option{background:var(--card2)}
   <div class="card mb" style="padding:14px 18px">
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <div class="form-group" style="flex:1;min-width:120px">
-        <label>ประเภท</label>
+        <label>Type</label>
         <select id="hist-type" onchange="renderHistory()">
-          <option value="">ทั้งหมด</option>
-          <option value="expense">รายจ่าย</option>
-          <option value="income">รายรับ</option>
-          <option value="transfer">โอนเงิน</option>
+          <option value="">All</option>
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+          <option value="transfer">Transfer</option>
         </select>
       </div>
       <div class="form-group" style="flex:1;min-width:120px">
-        <label>บัญชี</label>
+        <label>Account</label>
         <select id="hist-acct" onchange="renderHistory()">
-          <option value="">ทั้งหมด</option>
+          <option value="">All</option>
         </select>
       </div>
       <div class="form-group" style="flex:1;min-width:120px">
-        <label>หมวด</label>
+        <label>Category</label>
         <select id="hist-cat" onchange="renderHistory()">
-          <option value="">ทั้งหมด</option>
+          <option value="">All</option>
         </select>
       </div>
       <div class="form-group" style="flex:1;min-width:120px">
-        <label>วันที่จาก</label>
+        <label>Date From</label>
         <input type="date" id="hist-from" onchange="renderHistory()">
       </div>
       <div class="form-group" style="flex:1;min-width:120px">
-        <label>ถึงวันที่</label>
+        <label>To Date</label>
         <input type="date" id="hist-to" onchange="renderHistory()">
       </div>
     </div>
@@ -684,12 +718,13 @@ select option{background:var(--card2)}
       <table>
         <thead>
           <tr>
-            <th style="text-align:left">วันที่</th>
-            <th style="text-align:left">ประเภท</th>
-            <th style="text-align:left">หมวด</th>
-            <th style="text-align:left">รายละเอียด</th>
-            <th>บัญชี</th>
-            <th>จำนวน</th>
+            <th style="text-align:left">Date</th>
+            <th style="text-align:left">Type</th>
+            <th style="text-align:left">Category</th>
+            <th style="text-align:left">Description</th>
+            <th>Account</th>
+            <th>Amount</th>
+            <th>ยอดสะสม</th>
             <th style="text-align:left">Note</th>
             <th></th>
           </tr>
@@ -713,14 +748,14 @@ select option{background:var(--card2)}
       </p>
       <div class="add-row mb">
         <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/.../exec">
-        <button class="btn btn-primary btn-sm" onclick="saveUrl()">บันทึก</button>
+        <button class="btn btn-primary btn-sm" onclick="saveUrl()">Save</button>
       </div>
       <div id="url-status" style="font-size:12px;color:var(--muted)"></div>
     </div>
 
     <!-- Danger Zone -->
     <div class="card" style="border:1px solid rgba(255,107,107,.3)">
-      <div class="card-title" style="color:var(--expense)">⚠️ ล้างข้อมูล</div>
+      <div class="card-title" style="color:var(--expense)">⚠️ Clear Data</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
         ล้าง transactions ทั้งหมดในเครื่อง แล้ว sync ใหม่จาก Google Sheet<br>
         ใช้เมื่อข้อมูล column ผิด หรือข้อมูลซ้ำ
@@ -731,8 +766,11 @@ select option{background:var(--card2)}
 
     <!-- Pay Cycle -->
     <div class="card">
-      <div class="card-title">📅 รอบเงินเดือน</div>
+      <div class="card-title">Pay Cycle</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        รอบเงินเดือน
+      </p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
         ระบบตัดรอบตามวันเงินเดือนเข้า — คำนวณวันทำการสุดท้ายก่อนหรือตรงกับวันที่ 26 ของเดือนอัตโนมัติ<br>
         (ถ้าวันที่ 26 ตรงเสาร์ → ใช้ศุกร์, ตรงอาทิตย์ → ใช้ศุกร์)
       </p>
@@ -741,7 +779,10 @@ select option{background:var(--card2)}
 
     <!-- Accounts -->
     <div class="card">
-      <div class="card-title">บัญชี</div>
+      <div class="card-title">Accounts</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        บัญชี
+      </p>
       <div class="chips" id="chips-acct"></div>
       <div class="add-row">
         <input type="text" id="inp-acct" placeholder="เพิ่มบัญชีใหม่ เช่น SCB">
@@ -751,14 +792,20 @@ select option{background:var(--card2)}
 
     <!-- Credit Cards -->
     <div class="card">
-      <div class="card-title">💳 บัตรเครดิต</div>
+      <div class="card-title">Credit Cards</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        บัตรเครดิต
+      </p>
       <p style="font-size:12px;color:var(--muted);margin-bottom:12px">เลือกบัญชีที่เป็นบัตรเครดิต — ยอดค้างจะแสดงแยกเป็น "หนี้บัตรเครดิต" และไม่รวมใน Remaining Balance รวม</p>
       <div class="chips" id="chips-cc"></div>
     </div>
 
     <!-- Opening Balances -->
     <div class="card">
-      <div class="card-title">Opening Balance แต่ละบัญชี</div>
+      <div class="card-title">Opening Balances by Account</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        Opening Balance แต่ละบัญชี
+      </p>
       <p style="font-size:12px;color:var(--muted);margin-bottom:12px">ยอดเปิดบัญชี ณ ต้นรอบ — บัตรเครดิตกรอก <strong>ยอดเงินคงเหลือ</strong> (ถ้าตั้งวงเงินไว้แล้ว) หรือ <strong>ยอดหนี้ค้าง</strong></p>
       <div style="margin-bottom:12px">
         <select id="ob-cycle-sel" onchange="renderObInputs()" style="width:100%;max-width:280px"></select>
@@ -768,7 +815,10 @@ select option{background:var(--card2)}
 
     <!-- Transaction Templates -->
     <div class="card">
-      <div class="card-title">⚡ รายการประจำ (Templates)</div>
+      <div class="card-title">Templates</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        รายการประจำ
+      </p>
       <p style="font-size:12px;color:var(--muted);margin-bottom:12px">สร้างไว้แล้วกรอกแค่ยอดเงิน ไม่ต้องกรอกซ้ำทุกเดือน</p>
       <div id="tmpl-list" style="margin-bottom:12px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
@@ -786,7 +836,10 @@ select option{background:var(--card2)}
 
     <!-- Expense Categories -->
     <div class="card">
-      <div class="card-title">หมวดหมู่รายจ่าย</div>
+      <div class="card-title">Expense Categories</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        หมวดหมู่รายจ่าย
+      </p>  
       <div class="chips" id="chips-exp-cat"></div>
       <div class="add-row">
         <input type="text" id="inp-exp-cat" placeholder="เช่น ท่องเที่ยว">
@@ -796,7 +849,10 @@ select option{background:var(--card2)}
 
     <!-- Income Categories -->
     <div class="card">
-      <div class="card-title">หมวดหมู่รายรับ</div>
+      <div class="card-title">Income Categories</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        หมวดหมู่รายรับ
+      </p>
       <div class="chips" id="chips-inc-cat"></div>
       <div class="add-row">
         <input type="text" id="inp-inc-cat" placeholder="เช่น เงินเดือน">
@@ -807,6 +863,9 @@ select option{background:var(--card2)}
     <!-- Renewals -->
     <div class="card">
       <div class="card-title">Subscription / Renewal</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        รายการต่ออายุ/สมัครสมาชิก
+      </p>
       <div id="renew-setting-rows" style="margin-bottom:12px"></div>
       <div style="display:grid;grid-template-columns:1fr 100px auto;gap:8px;align-items:end">
         <input type="text" id="inp-renew-name" placeholder="เช่น Netflix">
@@ -823,24 +882,24 @@ select option{background:var(--card2)}
 <!-- OVERRIDE MODAL -->
 <div class="modal-backdrop" id="override-modal">
   <div class="modal">
-    <div class="modal-title">✎ แก้ไขวันตัดรอบ</div>
+    <div class="modal-title">แก้ไขวันตัดรอบ (Override Cycle Dates)</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
       ระบบคำนวณวันทำการก่อนวันที่ 26 อัตโนมัติ<br>
       แก้ไขที่นี่ถ้าต้องการ override รอบนี้
     </p>
     <div class="modal-row">
-      <label>วันเริ่มรอบ</label>
+      <label>วันเริ่มรอบ (YYYY-MM-DD)</label>
       <input type="date" id="ov-start">
     </div>
     <div class="modal-row">
-      <label>วันสิ้นรอบ</label>
+      <label>วันสิ้นรอบ (YYYY-MM-DD)</label>
       <input type="date" id="ov-end">
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">ว่างไว้ = ใช้ค่าอัตโนมัติ</div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeOverride()">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveOverride()">บันทึก</button>
-      <button class="btn" style="background:rgba(255,107,107,.15);color:var(--expense);border:none;border-radius:6px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;padding:7px 16px" onclick="clearOverride()">รีเซ็ต</button>
+      <button class="btn btn-ghost" onclick="closeOverride()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveOverride()">Save</button>
+      <button class="btn" style="background:rgba(255,107,107,.15);color:var(--expense);border:none;border-radius:6px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;padding:7px 16px" onclick="clearOverride()">Reset</button>
     </div>
   </div>
 </div>
@@ -856,7 +915,7 @@ const DEFAULT = {
   creditLimits:{},
   ccCutDates:{},
   openingBal:{},
-  expCats:['ประกันสังคม','ที่พัก','มอเตอร์ไซ','โทรศัพท์','ประกันชีวิต','บัตรเครดิต','กองทุน','ใช้หนี้','ช้อปของเข้าบ้าน','ท่องเที่ยว','อาหาร','บันเทิง','อื่นๆ'],
+  expCats:['ประกันสังคม','ที่พัก','มอเตอร์ไซ','โทรศัพท์','ประกันชีวิต','บัตรเครดิต','กองทุน','ใช้หนี้','ซื้อของเข้าบ้าน','ท่องเที่ยว','อาหาร','บันเทิง','อื่นๆ'],
   incCats:['เงินเดือน','บุพการีให้มา','หัก ณ ที่จ่าย','อื่น ๆ'],
   renewals:[
     {name:'Disney',amt:200},{name:'Netflix',amt:349},{name:'Google Drive',amt:99},
@@ -1498,10 +1557,31 @@ function renderHistory(){
     ${totalExp>0?`<span style="font-size:13px">รายจ่าย <b style="color:var(--expense)">${fmtPlain(totalExp)}</b></span>`:''}
     <span style="font-size:13px;font-weight:700;color:${net>=0?'var(--income)':'var(--expense)'}">ยอดสุทธิ ${net>=0?'+':''}${fmtPlain(net)}</span>`;
 
+  // ── Running balance (คำนวณจากทุก tx ของบัญชีที่ filter เรียงเก่าสุด→ใหม่สุด) ──
+  const txForBal=S.transactions
+    .filter(t=>!acctF||t.account===acctF)
+    .slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:(a.date||'')>(b.date||'')?1:0);
+  // ใส่ OB เป็นจุดเริ่มต้น
+  let obStart=0;
+  if(acctF){
+    const cycles=Object.keys(S.openingBal||{}).sort();
+    if(cycles.length) obStart=Number((S.openingBal[cycles[0]]||{})[acctF]||0);
+  }
+  const balMap=new Map();
+  let running=obStart;
+  txForBal.forEach(t=>{
+    if(t.type==='income') running+=Number(t.amount);
+    else if(t.type==='expense') running-=Number(t.amount);
+    balMap.set(t,running);
+  });
+
   const tbody=document.getElementById('hist-tbody');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:24px">ไม่มีรายการ</td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:24px">ไม่มีรายการ</td></tr>';return;}
   tbody.innerHTML=rows.map(t=>{
     const idx=S.transactions.indexOf(t);
+    const bal=balMap.get(t);
+    const balStr=bal!=null?(bal>=0?`+${fmtPlain(bal)}`:fmtPlain(bal)):'—';
+    const balColor=bal==null?'var(--muted)':bal>=0?'var(--income)':'var(--expense)';
     return `<tr class="cat-row">
       <td style="font-family:var(--mono);font-size:12px">${t.date||''}</td>
       <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;background:${t.type==='income'?'rgba(61,255,160,.1)':'rgba(255,107,107,.1)'};color:${t.type==='income'?'var(--income)':'var(--expense)'}">${t.type==='income'?'รายรับ':'รายจ่าย'}</span></td>
@@ -1509,6 +1589,7 @@ function renderHistory(){
       <td>${t.detail||'—'}</td>
       <td style="color:${acctColor(t.account)};text-align:right"><span class="acct-dot" style="background:${acctColor(t.account)}"></span>${t.account}</td>
       <td class="${t.type==='income'?'num-pos':'num-neg'}" style="font-family:var(--mono);font-size:12px">${t.type==='income'?'+':'-'}${fmtPlain(t.amount)}</td>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600;color:${balColor}">${balStr}</td>
       <td style="color:var(--muted);font-size:12px">${t.note||''}</td>
       <td style="white-space:nowrap">
         <button onclick="editTx(${idx})" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 5px;color:var(--muted)" title="แก้ไข">✏️</button>
