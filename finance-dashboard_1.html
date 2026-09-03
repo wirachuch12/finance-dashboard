@@ -2397,7 +2397,7 @@ async function syncSheet(){
       both.forEach(r=>{
         const date=parseDate(r.Date);
         const amt=Number(r.Amount);
-        const sheetTxId=r.TxID||'';
+        const sheetTxId=r['Transaction ID']||'';
         if(alreadyHave(sheetTxId, t=>(t.date||'').slice(0,10)===date&&t.detail===r.Detail&&t.amount==amt&&t.account===r.Account)) return;
         merged.push({type:r.type,date,category:r.Category,txType:r.Type,detail:r.Detail,account:r.Account,amount:amt,note:r.Note||'',_seq:sheetSeq++,...(sheetTxId?{txId:sheetTxId}:{})});
       });
@@ -2408,7 +2408,7 @@ async function syncSheet(){
         const from=r['From account'], to=r['To account'];
         const cat=r.Category||'โอนระหว่างธนาคาร';
         const detail=`${from} → ${to}`;
-        const sheetTxId=r.TxID||'';
+        const sheetTxId=r['Transaction ID']||'';
         const seq=sheetSeq++;
         if(!alreadyHave(sheetTxId, t=>(t.date||'').slice(0,10)===date&&t.account===from&&t.txType==='Transfer'&&t.type==='expense'&&t.amount==amt))
           merged.push({type:'expense',date,category:cat,txType:'Transfer',detail,account:from,amount:amt,note:'',_seq:seq,...(sheetTxId?{txId:sheetTxId}:{})});

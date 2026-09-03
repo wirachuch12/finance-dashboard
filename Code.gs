@@ -61,7 +61,7 @@ function writeData(ss, data) {
   if (type === "expense") {
     const sheet = ss.getSheetByName("รายจ่าย") || ss.insertSheet("รายจ่าย");
     ensureExpenseHeader(sheet);
-    ensureColumn(sheet, "TxID");
+    ensureColumn(sheet, "Transaction ID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category,
@@ -70,12 +70,12 @@ function writeData(ss, data) {
       Account: data.account,
       Amount: Number(data.amount),
       Note: data.note || "",
-      TxID: data.txId || ""
+      "Transaction ID": data.txId || ""
     });
   } else if (type === "income") {
     const sheet = ss.getSheetByName("รายรับ") || ss.insertSheet("รายรับ");
     ensureIncomeHeader(sheet);
-    ensureColumn(sheet, "TxID");
+    ensureColumn(sheet, "Transaction ID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category,
@@ -83,12 +83,12 @@ function writeData(ss, data) {
       Detail: data.detail,
       Account: data.account,
       Amount: Number(data.amount),
-      TxID: data.txId || ""
+      "Transaction ID": data.txId || ""
     });
   } else if (type === "transfer") {
     const sheet = ss.getSheetByName("โอนเงิน") || ss.insertSheet("โอนเงิน");
     ensureTransferHeader(sheet);
-    ensureColumn(sheet, "TxID");
+    ensureColumn(sheet, "Transaction ID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category || "โอนระหว่างธนาคาร",
@@ -96,7 +96,7 @@ function writeData(ss, data) {
       Detail: "to",
       "To account": data.toAccount,
       Amount: Number(data.amount),
-      TxID: data.txId || ""
+      "Transaction ID": data.txId || ""
     });
   }
 }
@@ -128,7 +128,7 @@ function appendByHeaders(sheet, dataObj) {
   sheet.appendRow(row);
 }
 
-// เพิ่ม column ถ้ายังไม่มีใน header row (สำหรับ sheet ที่สร้างมาก่อนจะมี TxID)
+// เพิ่ม column ถ้ายังไม่มีใน header row
 function ensureColumn(sheet, colName) {
   if (sheet.getLastRow() === 0) return; // empty sheet, header not written yet
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
