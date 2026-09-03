@@ -61,6 +61,7 @@ function writeData(ss, data) {
   if (type === "expense") {
     const sheet = ss.getSheetByName("รายจ่าย") || ss.insertSheet("รายจ่าย");
     ensureExpenseHeader(sheet);
+    ensureColumn(sheet, "TxID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category,
@@ -68,29 +69,34 @@ function writeData(ss, data) {
       Detail: data.detail,
       Account: data.account,
       Amount: Number(data.amount),
-      Note: data.note || ""
+      Note: data.note || "",
+      TxID: data.txId || ""
     });
   } else if (type === "income") {
     const sheet = ss.getSheetByName("รายรับ") || ss.insertSheet("รายรับ");
     ensureIncomeHeader(sheet);
+    ensureColumn(sheet, "TxID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category,
       Type: data.txType,
       Detail: data.detail,
       Account: data.account,
-      Amount: Number(data.amount)
+      Amount: Number(data.amount),
+      TxID: data.txId || ""
     });
   } else if (type === "transfer") {
     const sheet = ss.getSheetByName("โอนเงิน") || ss.insertSheet("โอนเงิน");
     ensureTransferHeader(sheet);
+    ensureColumn(sheet, "TxID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category || "โอนระหว่างธนาคาร",
       "From account": data.fromAccount,
       Detail: "to",
       "To account": data.toAccount,
-      Amount: Number(data.amount)
+      Amount: Number(data.amount),
+      TxID: data.txId || ""
     });
   }
 }
@@ -120,6 +126,15 @@ function appendByHeaders(sheet, dataObj) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const row = headers.map(h => (dataObj[h] !== undefined ? dataObj[h] : ''));
   sheet.appendRow(row);
+}
+
+// เพิ่ม column ถ้ายังไม่มีใน header row (สำหรับ sheet ที่สร้างมาก่อนจะมี TxID)
+function ensureColumn(sheet, colName) {
+  if (sheet.getLastRow() === 0) return; // empty sheet, header not written yet
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (!headers.includes(colName)) {
+    sheet.getRange(1, sheet.getLastColumn() + 1).setValue(colName);
+  }
 }
 
 function ensureExpenseHeader(sheet) {
