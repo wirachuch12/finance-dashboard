@@ -61,7 +61,6 @@ function writeData(ss, data) {
   if (type === "expense") {
     const sheet = ss.getSheetByName("รายจ่าย") || ss.insertSheet("รายจ่าย");
     ensureExpenseHeader(sheet);
-    ensureColumn(sheet, "Transaction ID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category,
@@ -69,34 +68,29 @@ function writeData(ss, data) {
       Detail: data.detail,
       Account: data.account,
       Amount: Number(data.amount),
-      Note: data.note || "",
-      "Transaction ID": data.txId || ""
+      Note: data.note || ""
     });
   } else if (type === "income") {
     const sheet = ss.getSheetByName("รายรับ") || ss.insertSheet("รายรับ");
     ensureIncomeHeader(sheet);
-    ensureColumn(sheet, "Transaction ID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category,
       Type: data.txType,
       Detail: data.detail,
       Account: data.account,
-      Amount: Number(data.amount),
-      "Transaction ID": data.txId || ""
+      Amount: Number(data.amount)
     });
   } else if (type === "transfer") {
     const sheet = ss.getSheetByName("โอนเงิน") || ss.insertSheet("โอนเงิน");
     ensureTransferHeader(sheet);
-    ensureColumn(sheet, "Transaction ID");
     appendByHeaders(sheet, {
       Date: data.date,
       Category: data.category || "โอนระหว่างธนาคาร",
       "From account": data.fromAccount,
       Detail: "to",
       "To account": data.toAccount,
-      Amount: Number(data.amount),
-      "Transaction ID": data.txId || ""
+      Amount: Number(data.amount)
     });
   }
 }
@@ -128,14 +122,6 @@ function appendByHeaders(sheet, dataObj) {
   sheet.appendRow(row);
 }
 
-// เพิ่ม column ถ้ายังไม่มีใน header row
-function ensureColumn(sheet, colName) {
-  if (sheet.getLastRow() === 0) return; // empty sheet, header not written yet
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  if (!headers.includes(colName)) {
-    sheet.getRange(1, sheet.getLastColumn() + 1).setValue(colName);
-  }
-}
 
 function ensureExpenseHeader(sheet) {
   if (sheet.getLastRow() === 0) {
