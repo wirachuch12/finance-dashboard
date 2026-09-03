@@ -2396,8 +2396,9 @@ async function syncSheet(){
       let sheetSeq=0;
 
       const syncRow=(sheetTxId, newEntry, fieldMatch)=>{
-        // 1. txId ตรง → มีแล้ว ข้ามเลย
-        if(sheetTxId && merged.some(t=>t.txId===sheetTxId)) return;
+        // 1. txId + type + account ตรง → มีแล้ว ข้ามเลย
+        // ต้องเช็ค type+account ด้วย เพราะ transfer 2 ฝั่ง share txId เดียวกัน
+        if(sheetTxId && merged.some(t=>t.txId===sheetTxId&&t.type===newEntry.type&&t.account===newEntry.account)) return;
         // 2. field match → record มีอยู่แล้ว (ยังไม่มี txId) → backfill txId ให้
         const local=fieldMatch();
         if(local){ if(sheetTxId && !local.txId) local.txId=sheetTxId; return; }
