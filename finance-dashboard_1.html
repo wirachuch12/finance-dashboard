@@ -712,6 +712,10 @@ select option{background:var(--card2)}
         <label>To Date</label>
         <input type="date" id="hist-to" onchange="renderHistory()">
       </div>
+      <div class="form-group" style="flex:1;min-width:160px">
+        <label>Transaction ID</label>
+        <input type="text" id="hist-txid" placeholder="TAX-20260101-001" oninput="renderHistory()" style="font-family:var(--mono);font-size:12px">
+      </div>
     </div>
   </div>
   <div class="card">
@@ -727,6 +731,7 @@ select option{background:var(--card2)}
             <th>Amount</th>
             <th title="ยอดคงเหลือในบัญชีนั้นๆ หลัง transaction นี้">ยอดในบัญชี</th>
             <th style="text-align:left">Note</th>
+            <th style="text-align:left" class="hide-mobile">Transaction ID</th>
             <th></th>
           </tr>
         </thead>
@@ -1633,6 +1638,7 @@ function renderHistory(){
   const catF=document.getElementById('hist-cat').value;
   const fromF=document.getElementById('hist-from').value;
   const toF=document.getElementById('hist-to').value;
+  const txidF=(document.getElementById('hist-txid').value||'').trim().toUpperCase();
 
   // populate dropdowns
   const ha=document.getElementById('hist-acct');
@@ -1653,6 +1659,7 @@ function renderHistory(){
   if(catF)  rows=rows.filter(t=>t.category===catF);
   if(fromF) rows=rows.filter(t=>(t.date||'').slice(0,10)>=fromF);
   if(toF)   rows=rows.filter(t=>(t.date||'').slice(0,10)<=toF);
+  if(txidF) rows=rows.filter(t=>(t.txId||'').toUpperCase().includes(txidF));
 
   // Summary bar
   const sumEl=document.getElementById('hist-summary');
@@ -1693,7 +1700,7 @@ function renderHistory(){
   });
 
   const tbody=document.getElementById('hist-tbody');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:24px">ไม่มีรายการ</td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:24px">ไม่มีรายการ</td></tr>';return;}
   tbody.innerHTML=rows.map(t=>{
     const idx=S.transactions.indexOf(t);
     const bal=balMap.get(t);
@@ -1708,6 +1715,7 @@ function renderHistory(){
       <td class="${t.type==='income'?'num-pos':'num-neg'}" style="font-family:var(--mono);font-size:12px">${t.type==='income'?'+':'-'}${fmtPlain(t.amount)}</td>
       <td style="font-family:var(--mono);font-size:12px;font-weight:600;color:${balColor}">${balStr}</td>
       <td style="color:var(--muted);font-size:12px">${t.note||''}</td>
+      <td class="hide-mobile" style="font-family:var(--mono);font-size:11px;color:${t.txId?'var(--muted)':'var(--border)'};white-space:nowrap">${t.txId||'—'}</td>
       <td style="white-space:nowrap">
         <button onclick="editTx(${idx})" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 5px;color:var(--muted)" title="แก้ไข">✏️</button>
         <button onclick="deleteTx(${idx})" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 5px;color:var(--muted)" title="ลบ">🗑️</button>
